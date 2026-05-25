@@ -1,8 +1,4 @@
-<script setup lang="ts">
-import { getConfig } from './config'
-
-const cfg = getConfig()
-</script>
+<script setup lang="ts"></script>
 
 <template>
   <main>

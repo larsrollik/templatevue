@@ -36,6 +36,10 @@ jobs:
           test -f template/src/main.ts
           test -f template/src/App.vue
           test -f template/src/config.ts
+          test -f template/src/env.d.ts
+          test -f template/public/favicon.svg
+          test -f template/tsconfig.app.json
+          test -f template/tsconfig.node.json
           test -f template/package.json
           test -f template/vite.config.ts
           test -f "template/.github/workflows/ci.yml"
@@ -70,6 +74,11 @@ jobs:
           ! grep -q '"exports"' template/package.json
           # private flag set
           grep -q '"private": true' template/package.json
+          # tsconfig project references
+          grep -q "tsconfig.app.json" template/tsconfig.json
+          grep -q "tsconfig.node.json" template/tsconfig.json
+          # vite/client types declared
+          grep -q "vite/client" template/src/env.d.ts
           # Docker build/push and GHCR in release workflow
           grep -q "docker/build-push-action" "template/.github/workflows/release.yml"
           grep -q "ghcr\.io" "template/.github/workflows/release.yml"
@@ -107,6 +116,10 @@ jobs:
           test -f /tmp/test-output/src/main.ts                             && echo "ok: src/main.ts"
           test -f /tmp/test-output/src/App.vue                             && echo "ok: src/App.vue"
           test -f /tmp/test-output/src/config.ts                           && echo "ok: src/config.ts"
+          test -f /tmp/test-output/src/env.d.ts                            && echo "ok: src/env.d.ts"
+          test -f /tmp/test-output/public/favicon.svg                      && echo "ok: public/favicon.svg"
+          test -f /tmp/test-output/tsconfig.app.json                       && echo "ok: tsconfig.app.json"
+          test -f /tmp/test-output/tsconfig.node.json                      && echo "ok: tsconfig.node.json"
           test -f /tmp/test-output/public/config.json                      && echo "ok: public/config.json"
           test -f /tmp/test-output/.github/workflows/ci.yml                && echo "ok: ci.yml"
           test -f /tmp/test-output/.github/workflows/release.yml           && echo "ok: release.yml"

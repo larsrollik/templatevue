@@ -23,8 +23,7 @@ RUN chmod +x /docker-entrypoint.d/40-runtime-config.sh
 
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Default runtime config (public/config.json) — overwritten by entrypoint
-# if a secrets file is mounted at SECRET_CONFIG_PATH.
-COPY --from=build /app/dist/config.json /usr/share/nginx/html/config.json
-
 EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+    CMD wget -qO- http://localhost/ || exit 1
