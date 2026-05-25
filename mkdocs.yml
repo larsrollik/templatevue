@@ -1,25 +1,55 @@
 site_name: templatevue
 site_description: Copier template for Vue 3 + TypeScript apps deployed with Docker
 repo_url: https://github.com/larsrollik/templatevue
-repo_name: templatevue
+repo_name: larsrollik/templatevue
 edit_uri: edit/main/docs/
 
 theme:
   name: material
+  palette:
+    - scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
   features:
+    - navigation.tabs
     - navigation.sections
+    - navigation.path
     - navigation.top
+    - navigation.indexes
+    - search.suggest
+    - search.highlight
     - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - content.tooltips
+  icon:
+    repo: fontawesome/brands/github
 
 markdown_extensions:
   - admonition
+  - pymdownx.details
   - pymdownx.highlight:
       anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
   - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
+  - pymdownx.snippets
   - toc:
       permalink: true
+  - attr_list
+  - md_in_html
 
 nav:
   - Home: index.md
