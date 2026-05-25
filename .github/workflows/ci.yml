@@ -111,7 +111,7 @@ jobs:
           test -f /tmp/test-output/.github/workflows/ci.yml
           test -f /tmp/test-output/.github/workflows/release.yml
           grep -q "test-app" /tmp/test-output/package.json
-          grep -q "TestApp" /tmp/test-output/src/App.vue
+          grep -q "Test App" /tmp/test-output/src/App.vue
           grep -q "test-app.example.com" /tmp/test-output/docker-compose.yml
           grep -q "/run/secrets/test-app-config.json" /tmp/test-output/docker/40-runtime-config.sh
           grep -q "ghcr.io/testuser/test-app" /tmp/test-output/.github/workflows/release.yml
