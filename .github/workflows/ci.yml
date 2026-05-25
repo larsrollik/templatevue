@@ -17,6 +17,8 @@ jobs:
     if: "!startsWith(github.event.head_commit.message, 'bump:')"
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Validate copier.yaml syntax
         run: |
@@ -80,7 +82,7 @@ jobs:
       - name: Generate test project
         run: |
           pip install copier
-          copier copy . /tmp/test-output --defaults \
+          copier copy . /tmp/test-output --defaults --trust \
             --data "project_name=Test App" \
             --data "project_slug=test-app" \
             --data "project_pascal=TestApp" \
