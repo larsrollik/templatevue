@@ -1,0 +1,9 @@
+version: 2
+updates:
+  # Keep GitHub Actions versions current.
+  # npm/pnpm packages live inside template/ which has no lock file,
+  # so npm ecosystem updates are intentionally excluded.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
