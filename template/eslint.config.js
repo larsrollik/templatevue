@@ -19,6 +19,11 @@ export default [
     },
   },
   {
+    rules: {
+      'vue/multi-word-component-names': ['error', { ignores: ['App'] }],
+    },
+  },
+  {
     ignores: ['dist/**', 'node_modules/**', 'docs/.vitepress/dist/**', 'docs/.vitepress/cache/**'],
   },
 ]
