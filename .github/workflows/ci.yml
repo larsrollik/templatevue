@@ -99,22 +99,22 @@ jobs:
       - name: Check generated project
         run: |
           echo "=== generated files ===" && find /tmp/test-output -not -path '*/.git/*' | sort
-          test -f /tmp/test-output/index.html
-          test -f /tmp/test-output/Dockerfile
-          test -f /tmp/test-output/docker-compose.yml
-          test -f /tmp/test-output/docker/nginx.conf
-          test -f /tmp/test-output/docker/40-runtime-config.sh
-          test -f /tmp/test-output/src/main.ts
-          test -f /tmp/test-output/src/App.vue
-          test -f /tmp/test-output/src/config.ts
-          test -f /tmp/test-output/public/config.json
-          test -f /tmp/test-output/.github/workflows/ci.yml
-          test -f /tmp/test-output/.github/workflows/release.yml
-          grep -q "test-app" /tmp/test-output/package.json
-          grep -q "Test App" /tmp/test-output/src/App.vue
-          grep -q "test-app.example.com" /tmp/test-output/docker-compose.yml
-          grep -q "/run/secrets/test-app-config.json" /tmp/test-output/docker/40-runtime-config.sh
-          grep -q "ghcr.io/testuser/test-app" /tmp/test-output/.github/workflows/release.yml
+          test -f /tmp/test-output/index.html                              && echo "ok: index.html"
+          test -f /tmp/test-output/Dockerfile                              && echo "ok: Dockerfile"
+          test -f /tmp/test-output/docker-compose.yml                      && echo "ok: docker-compose.yml"
+          test -f /tmp/test-output/docker/nginx.conf                       && echo "ok: docker/nginx.conf"
+          test -f /tmp/test-output/docker/40-runtime-config.sh             && echo "ok: docker/40-runtime-config.sh"
+          test -f /tmp/test-output/src/main.ts                             && echo "ok: src/main.ts"
+          test -f /tmp/test-output/src/App.vue                             && echo "ok: src/App.vue"
+          test -f /tmp/test-output/src/config.ts                           && echo "ok: src/config.ts"
+          test -f /tmp/test-output/public/config.json                      && echo "ok: public/config.json"
+          test -f /tmp/test-output/.github/workflows/ci.yml                && echo "ok: ci.yml"
+          test -f /tmp/test-output/.github/workflows/release.yml           && echo "ok: release.yml"
+          grep -q "test-app" /tmp/test-output/package.json                 && echo "ok: slug in package.json"
+          grep -q "Test App" /tmp/test-output/src/App.vue                  && echo "ok: name in App.vue"
+          grep -q "test-app.example.com" /tmp/test-output/docker-compose.yml          && echo "ok: traefik_host in docker-compose"
+          grep -q "test-app-config.json" /tmp/test-output/docker/40-runtime-config.sh && echo "ok: secret_config_path in entrypoint"
+          grep -q "ghcr.io/testuser/test-app" /tmp/test-output/.github/workflows/release.yml && echo "ok: GHCR image in release.yml"
           echo "Generated project checks passed."
 
   secrets-scan:
