@@ -1,0 +1,82 @@
+# templatevue — copier template configuration
+# Usage: copier copy gh:YOUR_ORG/templatevue my-new-project
+# Update: copier update (inside an existing generated project)
+
+_subdirectory: template
+_min_copier_version: "9.0"
+_answers_file: .copier-answers.yml
+
+# Use [[ ]] delimiters to avoid conflicts with GitHub Actions ${{ }} syntax.
+_envops:
+  block_start_string: "[%"
+  block_end_string: "%]"
+  variable_start_string: "[["
+  variable_end_string: "]]"
+  comment_start_string: "[#"
+  comment_end_string: "#]"
+
+# Make husky hooks executable after copy
+_tasks:
+  - "chmod +x .husky/pre-commit .husky/commit-msg 2>/dev/null || true"
+
+# ---------------------------------------------------------------------------
+# Questions
+# ---------------------------------------------------------------------------
+
+project_name:
+  type: str
+  help: "Human-readable project name (e.g. 'My Vue Component')"
+
+project_slug:
+  type: str
+  help: "npm package name — lowercase, hyphens (e.g. 'my-vue-component')"
+  default: "{{ project_name | lower | replace(' ', '-') | replace('_', '-') }}"
+
+project_pascal:
+  type: str
+  help: "PascalCase name for Vue component (e.g. 'MyVueComponent')"
+  default: "{{ project_name | title | replace(' ', '') | replace('-', '') | replace('_', '') }}"
+
+project_description:
+  type: str
+  help: "Short one-line description"
+
+author_name:
+  type: str
+  help: "Your full name"
+
+author_email:
+  type: str
+  help: "Your email address"
+
+github_username:
+  type: str
+  help: "GitHub username or organization"
+
+github_repo:
+  type: str
+  help: "GitHub repository name"
+  default: "{{ project_slug }}"
+
+node_requires:
+  type: str
+  help: "Minimum Node.js version"
+  default: "20"
+  choices:
+    - "20"
+    - "22"
+
+traefik_host:
+  type: str
+  help: "Hostname for Traefik router rule (e.g. 'myapp.example.com')"
+  default: "{{ project_slug }}.example.com"
+
+secret_config_path:
+  type: str
+  help: "Container path where the runtime secrets JSON file will be mounted"
+  default: "/run/secrets/{{ project_slug }}-config.json"
+
+year:
+  type: int
+  help: "Copyright year"
+  default: "{{ '%Y' | strftime }}"

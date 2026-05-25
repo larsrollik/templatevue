@@ -1,0 +1,30 @@
+site_name: templatevue
+site_description: Copier template for Vue 3 + TypeScript apps deployed with Docker and Traefik
+repo_url: https://github.com/YOUR_ORG/templatevue
+repo_name: templatevue
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Release workflow: release-workflow.md
+  - Docker deployment: docker-deployment.md
+  - GPG signing: gpg-signing.md
+  - Local CI with act: local-ci.md
+  - Branch protection: branch-protection.md

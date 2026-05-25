@@ -1,0 +1,24 @@
+services:
+  [[ project_slug ]]:
+    image: ghcr.io/[[ github_username ]]/[[ github_repo ]]:latest
+    build:
+      context: .
+    restart: unless-stopped
+    environment:
+      SECRET_CONFIG_PATH: "[[ secret_config_path ]]"
+    volumes:
+      # Mount your runtime secrets file here.
+      # The entrypoint copies it to config.json before nginx starts.
+      - [[ secret_config_path ]]:[[ secret_config_path ]]:ro
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.[[ project_slug ]].rule: "Host(`[[ traefik_host ]]`)"
+      traefik.http.routers.[[ project_slug ]].entrypoints: websecure
+      traefik.http.routers.[[ project_slug ]].tls: "true"
+      traefik.http.services.[[ project_slug ]].loadbalancer.server.port: "80"
+    networks:
+      - traefik
+
+networks:
+  traefik:
+    external: true
