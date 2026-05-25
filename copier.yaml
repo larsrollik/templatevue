@@ -1,5 +1,5 @@
 # templatevue — copier template configuration
-# Usage: copier copy gh:YOUR_ORG/templatevue my-new-project
+# Usage: copier copy gh:larsrollik/templatevue my-new-project
 # Update: copier update (inside an existing generated project)
 
 _subdirectory: template

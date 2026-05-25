@@ -1,0 +1,144 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+    tags-ignore: ["v*"]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate template
+    runs-on: ubuntu-latest
+    if: "!startsWith(github.event.head_commit.message, 'bump:')"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate copier.yaml syntax
+        run: |
+          python3 -c "import yaml; yaml.safe_load(open('copier.yaml'))"
+          echo "copier.yaml: valid"
+
+      - name: Check template structure
+        run: |
+          test -f template/index.html
+          test -f template/Dockerfile
+          test -f template/docker-compose.yml
+          test -f template/docker/nginx.conf
+          test -f template/docker/40-runtime-config.sh
+          test -f template/public/config.json
+          test -f template/src/main.ts
+          test -f template/src/App.vue
+          test -f template/src/config.ts
+          test -f template/package.json
+          test -f template/vite.config.ts
+          test -f "template/.github/workflows/ci.yml"
+          test -f "template/.github/workflows/release.yml"
+          test -f "template/.github/workflows/docs.yml"
+          echo "All expected template files present."
+
+      - name: Validate non-template YAML files
+        run: |
+          python3 -c "
+          import yaml, pathlib, sys
+          errors = []
+          for p in pathlib.Path('template').rglob('*.yml'):
+              text = p.read_text()
+              if '[[' in text or '{%' in text:
+                  continue
+              try:
+                  yaml.safe_load(text)
+              except yaml.YAMLError as e:
+                  errors.append(f'{p}: {e}')
+          if errors:
+              print('\n'.join(errors)); sys.exit(1)
+          print('All non-template YAML files valid.')
+          "
+
+      - name: Check key template content
+        run: |
+          # app mode — no build.lib
+          ! grep -q "build\.lib" template/vite.config.ts
+          # no npm distribution fields
+          ! grep -q '"main"' template/package.json
+          ! grep -q '"exports"' template/package.json
+          # private flag set
+          grep -q '"private": true' template/package.json
+          # Docker build/push and GHCR in release workflow
+          grep -q "docker/build-push-action" "template/.github/workflows/release.yml"
+          grep -q "ghcr\.io" "template/.github/workflows/release.yml"
+          # runtime config entrypoint wired into Dockerfile
+          grep -q "40-runtime-config\.sh" template/Dockerfile
+          # SPA fallback in nginx config
+          grep -q "try_files" template/docker/nginx.conf
+          echo "All content checks passed."
+
+      - name: Generate test project
+        run: |
+          pip install copier
+          copier copy . /tmp/test-output --defaults \
+            --data "project_name=Test App" \
+            --data "project_slug=test-app" \
+            --data "project_pascal=TestApp" \
+            --data "project_description=A test app" \
+            --data "author_name=Test Author" \
+            --data "author_email=test@example.com" \
+            --data "github_username=testuser" \
+            --data "github_repo=test-app" \
+            --data "node_requires=22" \
+            --data "traefik_host=test-app.example.com" \
+            --data "secret_config_path=/run/secrets/test-app-config.json" \
+            --data "year=2026"
+
+      - name: Check generated project
+        run: |
+          echo "=== generated files ===" && find /tmp/test-output -not -path '*/.git/*' | sort
+          test -f /tmp/test-output/index.html
+          test -f /tmp/test-output/Dockerfile
+          test -f /tmp/test-output/docker-compose.yml
+          test -f /tmp/test-output/docker/nginx.conf
+          test -f /tmp/test-output/docker/40-runtime-config.sh
+          test -f /tmp/test-output/src/main.ts
+          test -f /tmp/test-output/src/App.vue
+          test -f /tmp/test-output/src/config.ts
+          test -f /tmp/test-output/public/config.json
+          test -f /tmp/test-output/.github/workflows/ci.yml
+          test -f /tmp/test-output/.github/workflows/release.yml
+          grep -q "test-app" /tmp/test-output/package.json
+          grep -q "TestApp" /tmp/test-output/src/App.vue
+          grep -q "test-app.example.com" /tmp/test-output/docker-compose.yml
+          grep -q "/run/secrets/test-app-config.json" /tmp/test-output/docker/40-runtime-config.sh
+          grep -q "ghcr.io/testuser/test-app" /tmp/test-output/.github/workflows/release.yml
+          echo "Generated project checks passed."
+
+  secrets-scan:
+    name: Secrets scan
+    runs-on: ubuntu-latest
+    if: "!startsWith(github.event.head_commit.message, 'bump:')"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    needs: [validate, secrets-scan]
+    if: always()
+    steps:
+      - name: Check required jobs
+        run: |
+          if [[ "${{ needs.validate.result }}" != "success" && "${{ needs.validate.result }}" != "skipped" ]]; then
+            echo "validate failed" && exit 1
+          fi
+          if [[ "${{ needs.secrets-scan.result }}" != "success" && "${{ needs.secrets-scan.result }}" != "skipped" ]]; then
+            echo "secrets-scan failed" && exit 1
+          fi
+          echo "All required checks passed."

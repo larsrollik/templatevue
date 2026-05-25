@@ -1,6 +1,6 @@
 # templatevue
 
-Copier template for Vue 3 + TypeScript apps served behind nginx in Docker, with Traefik for routing.
+Copier template for Vue 3 + TypeScript apps deployed with Docker.
 
 ## Stack
 
@@ -17,7 +17,6 @@ Copier template for Vue 3 + TypeScript apps served behind nginx in Docker, with 
 | **release-it** | Local version bump + tag from commit history |
 | **nginx** | Static file serving in production |
 | **Docker + Compose** | Containerised deployment |
-| **Traefik** | TLS termination and routing (external, assumed pre-running) |
 | **VitePress** | Project documentation |
 
 ## Requirements
@@ -30,7 +29,7 @@ Copier template for Vue 3 + TypeScript apps served behind nginx in Docker, with 
 ## Create a new project
 
 ```sh
-copier copy gh:YOUR_ORG/templatevue my-new-project
+copier copy gh:larsrollik/templatevue my-new-project
 cd my-new-project
 git init && git add -A && git commit -m "chore: initial commit from templatevue"
 pnpm install    # installs deps and sets up husky hooks via prepare script
