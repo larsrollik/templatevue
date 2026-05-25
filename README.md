@@ -2,7 +2,7 @@
 
 Copier template for Vue 3 + TypeScript apps deployed with Docker.
 
-**[→ Full documentation](https://YOUR_ORG.github.io/templatevue)**
+**[→ Full documentation](https://larsrollik.github.io/templatevue)**
 
 ## Stack
 
