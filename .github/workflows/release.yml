@@ -1,51 +1,30 @@
 name: Release
 
+# Publish a GitHub release for a tag. Triggered by a tag push (hand-pushed tags
+# release directly) or workflow_dispatch from versioning.yml (automatic path,
+# since a GITHUB_TOKEN-pushed tag can't trigger push:tags). No PyPI (Vue app).
 on:
   push:
-    branches: [main]
+    tags: ['v*']
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g. v0.3.1)'
+        required: true
 
 permissions:
   contents: write
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   release:
-    name: Bump version, GitHub release
+    name: GitHub release
     runs-on: ubuntu-latest
-    if: "!startsWith(github.event.head_commit.message, 'bump:')"
     steps:
       - uses: actions/checkout@v6
         with:
+          ref: "${{ github.event.inputs.tag || github.ref }}"
           fetch-depth: 0
-
-      - name: Configure git identity
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - uses: astral-sh/setup-uv@v7
-
-      - name: Bump version
-        id: bump
-        run: |
-          uvx --from commitizen cz bump --yes || EXIT=$?
-          if [ "${EXIT:-0}" -eq 21 ]; then
-            echo "No bumpable commits since last tag — skipping."
-            echo "skipped=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          [ "${EXIT:-0}" -eq 0 ] || exit $EXIT
-          VERSION=$(cat VERSION)
-          git push origin HEAD:main
-          git push origin "v${VERSION}"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-
-      - name: Create GitHub release
-        if: steps.bump.outputs.skipped != 'true'
-        uses: softprops/action-gh-release@v3
+      - uses: softprops/action-gh-release@v3
         with:
-          tag_name: "v${{ steps.bump.outputs.version }}"
+          tag_name: "${{ github.event.inputs.tag || github.ref_name }}"
           generate_release_notes: false
