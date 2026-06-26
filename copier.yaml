@@ -85,8 +85,6 @@ license_type:
   type: str
   help: "Licence for the generated project. noncommercial = custom MSW licence (research/academic only, no commercial use without agreement). bsd3 = BSD-3-Clause (allows commercial use — use for deployables with no research IP)."
   choices:
-    - value: noncommercial
-      name: "Custom noncommercial (MSW default)"
-    - value: bsd3
-      name: "BSD-3-Clause (deployable apps / no research IP)"
+    "Custom noncommercial (MSW default)": noncommercial
+    "BSD-3-Clause (deployable apps / no research IP)": bsd3
   default: noncommercial
