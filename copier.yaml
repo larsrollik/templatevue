@@ -65,10 +65,11 @@ github_repo:
 node_requires:
   type: str
   help: "Minimum Node.js version"
-  default: "20"
+  default: "24"
   choices:
     - "20"
     - "22"
+    - "24"
 
 traefik_host:
   type: str

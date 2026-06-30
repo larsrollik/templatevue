@@ -1,0 +1,6 @@
+# pnpm 10+/11 moved these settings out of package.json and block dependency build
+# scripts by default. Allow the ones the toolchain needs: esbuild (vite's bundler)
+# and vue-demi (used by pinia, if added). Without this, `pnpm install` errors.
+allowBuilds:
+  esbuild: true
+  vue-demi: true

@@ -34,3 +34,6 @@ Thumbs.db
 !.env.example
 
 # pnpm-lock.yaml is committed — reproducible container builds require it
+
+# TypeScript incremental build cache
+*.tsbuildinfo
