@@ -664,19 +664,21 @@
 </ul>
 <p>For this template's workflows, <strong>Medium</strong> is sufficient.</p>
 <h2 id="passing-secrets-locally">Passing secrets locally<a class="headerlink" href="#passing-secrets-locally" title="Permanent link">&para;</a></h2>
-<div class="language-sh highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>act<span class="w"> </span>push<span class="w"> </span>--secret<span class="w"> </span><span class="nv">UV_PUBLISH_TOKEN</span><span class="o">=</span>&lt;token&gt;
+<p>Most workflows need no secrets locally — the release image push uses <code>GITHUB_TOKEN</code>
+(provided automatically in CI). To test a job that needs a token:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>act<span class="w"> </span>push<span class="w"> </span>--secret<span class="w"> </span><span class="nv">GITHUB_TOKEN</span><span class="o">=</span>&lt;token&gt;
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># or using a secrets file:</span>
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>act<span class="w"> </span>push<span class="w"> </span>--secret-file<span class="w"> </span>.env.act
 </span></code></pre></div>
 <p><code>.env.act</code> format (add to <code>.gitignore</code>):</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>UV_PUBLISH_TOKEN=pypi-...
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>GITHUB_TOKEN=ghp_...
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>ANTHROPIC_API_KEY=sk-ant-...
 </span></code></pre></div>
 <h2 id="known-limitations">Known limitations<a class="headerlink" href="#known-limitations" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>act</code> doesn't support all GitHub Actions features (e.g. <code>workflow_run</code>, some contexts)</li>
 <li>Some actions that call back to GitHub APIs may behave differently</li>
-<li><code>secret-scanner/action</code> may not work locally — skip with <code>act push -j lint -j test</code></li>
+<li>Docker build/push jobs may need extra buildx/registry setup under <code>act</code></li>
 </ul>
 
 
