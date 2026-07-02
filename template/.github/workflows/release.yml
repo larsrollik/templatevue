@@ -1,16 +1,21 @@
 name: Release
 
+# Publish only: build the image, push to GHCR, and cut a GitHub release.
+# Triggered by a tag (hand-pushed tags publish directly) or by a
+# workflow_dispatch from versioning.yml (a GITHUB_TOKEN-pushed tag cannot
+# trigger push:tags). Merge to main is the only release path — no promotion branch.
 on:
   push:
-    tags:
-      - "v[0-9]*"
+    tags: ["v[0-9]*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release (e.g. v0.1.2)"
+        required: true
 
 permissions:
   contents: write
   packages: write
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   release:
@@ -19,14 +24,24 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          ref: "${{ github.event.inputs.tag || github.ref }}"
           fetch-depth: 0
 
-      - name: Configure git identity
+      - name: Compute image tags
+        id: meta
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          VER="${TAG#v}"
+          MAJMIN="$(echo "$VER" | cut -d. -f1-2)"
+          IMG="ghcr.io/[[ github_username ]]/[[ github_repo ]]"
+          {
+            echo "tags<<EOF"
+            echo "${IMG}:${VER}"
+            echo "${IMG}:${MAJMIN}"
+            echo "${IMG}:latest"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
-      # ── Docker image ──────────────────────────────────────────────────────
       - name: Log in to GHCR
         uses: docker/login-action@v4
         with:
@@ -37,75 +52,19 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
-      - name: Extract image metadata
-        id: meta
-        uses: docker/metadata-action@v6
-        with:
-          images: ghcr.io/[[ github_username ]]/[[ github_repo ]]
-          tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest
-
       - name: Build and push
         uses: docker/build-push-action@v7
         with:
           context: .
           push: true
           tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      # ── Squash merge main → prod ──────────────────────────────────────────
-      - name: Squash merge main → prod
-        run: |
-          git fetch origin
-
-          if git ls-remote --exit-code --heads origin prod > /dev/null 2>&1; then
-            git checkout prod
-            git pull origin prod
-          else
-            git checkout -b prod
-          fi
-
-          git merge --squash origin/main || true
-          git checkout -f origin/main -- .
-          git add -A
-
-          if git diff --cached --quiet; then
-            echo "Nothing new to squash-merge."
-          else
-            git commit -m "release: ${{ github.ref_name }}"
-            git push origin prod
-          fi
-
-      # ── GitHub release ────────────────────────────────────────────────────
-      - name: Generate release notes
-        id: notes
-        run: |
-          CURRENT_TAG="${{ github.ref_name }}"
-          PREV_TAG=$(git tag --sort=-v:refname | grep -v "^${CURRENT_TAG}$" | head -1)
-
-          if [ -n "$PREV_TAG" ]; then
-            NOTES=$(git log "${PREV_TAG}..HEAD" \
-              --pretty=format:"- %s" --no-merges \
-              | grep -v "^- chore: release" || true)
-          else
-            NOTES=$(git log --pretty=format:"- %s" --no-merges \
-              | grep -v "^- chore: release" || true)
-          fi
-
-          [ -z "$NOTES" ] && NOTES="No changes recorded."
-
-          echo "content<<EOF" >> "$GITHUB_OUTPUT"
-          echo "$NOTES"       >> "$GITHUB_OUTPUT"
-          echo "EOF"          >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "${{ github.ref_name }}" \
-            --title "Release ${{ github.ref_name }}" \
-            --notes "${{ steps.notes.outputs.content }}"
+          gh release create "${{ github.event.inputs.tag || github.ref_name }}" \
+            --title "Release ${{ github.event.inputs.tag || github.ref_name }}" \
+            --generate-notes

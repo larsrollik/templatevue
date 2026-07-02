@@ -14,7 +14,7 @@ Copier template for Vue 3 + TypeScript apps deployed with Docker.
 | **vitest** | Unit testing |
 | **husky + lint-staged** | Git hooks: auto-fix staged files, validate commit message |
 | **commitlint** | Enforces Conventional Commits message format |
-| **release-it** | Local version bump + tag from commit history |
+| **release-it** | Conventional-commit version bump + tag (run in CI by `versioning.yml`) |
 | **nginx** | Static file serving in production |
 | **Docker + Compose** | Containerised deployment |
 | **VitePress** | Project documentation |
@@ -73,8 +73,9 @@ pnpm lint           # eslint --fix
 pnpm format         # prettier --write .
 pnpm typecheck      # vue-tsc --build --force
 pnpm docs:dev       # vitepress dev server
-pnpm release        # release-it: bump version, create tag
-git push --follow-tags  # push commits + tag → triggers release workflow
+pnpm release --ci   # manual release override (bump + tag + push).
+                    # Releases run automatically in CI on merge to main —
+                    # this is only for a manual/off-cycle cut.
 ```
 
 ## Generated project structure

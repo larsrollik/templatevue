@@ -16,17 +16,15 @@ Configure branch protection rules on GitHub to enforce the gitflow.
 | Require branches to be up to date | ✓ | No stale merges |
 | Restrict who can push | maintainers only | Prevents accidental direct pushes |
 
-## Recommended rules for `prod`
+## Allow `versioning.yml` to push back to `main`
 
-Branch name pattern: `prod`
-
-| Setting | Value | Reason |
-|---|---|---|
-| Restrict who can push | nobody / automation only | Only `release.yml` (via GITHUB_TOKEN) should write here |
-| Require a pull request | optional | `release.yml` pushes directly; a PR rule would block it unless the token has admin bypass |
+There is no `prod` branch. On merge, `versioning.yml` commits the version bump and
+pushes the tag back to `main`. GitHub's default branch protection blocks this.
 
 !!! note
-    `release.yml` pushes to `prod` using `GITHUB_TOKEN` with `permissions: contents: write`. If you enable "Require PR" on `prod`, you'll need to add a bypass rule for the `github-actions[bot]` actor (GitHub's branch protection UI supports this).
+    If you require pull requests on `main`, add a bypass rule for the
+    `github-actions[bot]` actor (GitHub's branch protection UI supports this), or the
+    bump push will fail with a 403.
 
 ## Required status check name
 
