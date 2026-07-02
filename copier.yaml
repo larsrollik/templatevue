@@ -82,7 +82,7 @@ secret_config_path:
   default: "/run/secrets/{{ project_slug }}-config.json"
 
 year:
-  type: int
+  type: str
   help: "Copyright year"
   default: "{{ '%Y' | strftime }}"
 
