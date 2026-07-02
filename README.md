@@ -23,7 +23,7 @@ Copier template for Vue 3 + TypeScript apps deployed with Docker.
 ## Quickstart
 
 ```sh
-uv tool install copier          # or: pip install copier
+uv tool install copier
 copier copy gh:larsrollik/templatevue my-new-project
 cd my-new-project
 git init && git add -A && git commit -m "chore: initial commit from templatevue"

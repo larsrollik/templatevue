@@ -30,7 +30,7 @@ Branch name pattern: `prod`
 
 ## Required status check name
 
-The aggregate job in `ci.yml` is named `CI`. This is what to enter in the required status checks field. It only passes when both `lint` and `secrets-scan` succeed, and only runs when both have completed.
+The aggregate job in `ci.yml` is named `CI`. This is what to enter in the required status checks field. It only passes when both `lint` and `test` succeed, and only runs when both have completed.
 
 ## Rulesets (modern alternative)
 
