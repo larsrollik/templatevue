@@ -1,9 +1,12 @@
 # Release workflow
 
+Releases are automated in CI on merge to `main` — there is **no `prod` branch** and no
+manual release step. `versioning.yml` bumps + tags; `release.yml` builds the image and
+cuts the GitHub release.
+
 ## Branch topology
 
 ```
-prod  ←── squash merge on each release (automated by release.yml)
 main  ←── PR merges from feature/bug/hotfix branches
 feature/*, bug/*, hotfix/*  ←── created from main
 ```
@@ -15,32 +18,29 @@ feature/*, bug/*, hotfix/*  ←── created from main
 git checkout main && git pull
 git checkout -b feature/my-feature
 
-# 2. Commit — message format enforced by commitlint hook
+# 2. Commit — message format enforced by the commitlint hook
 git commit -m "feat: add dashboard view"
 
-# 3. Bump version locally
-pnpm release        # release-it reads commits, determines bump, creates tag
-                    # runs interactively — use --ci to skip prompts
-
-# 4. Push branch + tag
-git push --follow-tags
-
-# 5. Open PR to main
+# 3. Push + open PR to main
+git push -u origin HEAD
 gh pr create --base main --title "feat: add dashboard view"
 
-# 6. CI runs lint + typecheck on push; tests on PR
-# 7. Merge PR
+# 4. CI runs lint + typecheck on push; tests on PR — merge is blocked until green
+# 5. Merge PR
 gh pr merge --squash --delete-branch
 
-# 8. Tag push triggers release.yml:
-#    - builds Docker image
-#    - pushes to GHCR (ghcr.io/<org>/<repo>:<version> and :latest)
-#    - squash-merges main → prod
-#    - generates release notes from git log
-#    - creates GitHub release
+# 6. versioning.yml fires on push to main:
+#    - release-it reads commits since the last tag, determines the increment,
+#      commits "chore: release vX.Y.Z", tags it, and pushes
+#    - dispatches release.yml
+
+# 7. release.yml (on the tag / dispatch):
+#    - builds the Docker image
+#    - pushes to GHCR (ghcr.io/<org>/<repo>:<version>, :<major.minor>, :latest)
+#    - creates a GitHub release with auto-generated notes
 ```
 
-## How release-it determines the version increment
+## How the version increment is determined
 
 `release-it` with `@release-it/conventional-changelog` reads commits since the last tag:
 
@@ -50,13 +50,13 @@ gh pr merge --squash --delete-branch
 | at least one `feat:` | **minor** `0.x.0` |
 | `BREAKING CHANGE:` footer or `feat!:`/`fix!:` | **major** `x.0.0` |
 
-Override manually:
+If there are no bumpable commits since the last tag, `versioning.yml` makes no change
+and nothing is released. To cut a release manually (or override the increment), run
+locally and push the tag — a hand-pushed tag triggers `release.yml` directly:
 
 ```sh
-pnpm release --increment patch
-pnpm release --increment minor
-pnpm release --increment major
-pnpm release --ci
+pnpm release --ci                     # bump from commits, tag, push
+pnpm release --ci --increment minor   # force a specific increment
 ```
 
 ## Image tags produced
@@ -93,12 +93,13 @@ The `pre-commit` hook runs `lint-staged`:
 
 ## Common issues
 
-**`pnpm release` fails with git error**
+**`versioning.yml` didn't release after a merge**
 
-- Detached HEAD → `git checkout main` first
-- Uncommitted changes → commit or stash
-- Tag already exists → `git tag -d v1.2.3` to remove locally, `git push origin :refs/tags/v1.2.3` to remove remotely
+- No bumpable commits since the last tag → nothing to release (expected).
+- Actions can't push to `main` → allow `github-actions[bot]` to bypass branch
+  protection (see [Branch protection](branch-protection.md)).
 
-**commitlint rejects message**
+**commitlint rejects a message**
 
-Common mistakes: missing space after colon (`feat:message`), uppercase type (`Feat:`), period at end of subject.
+Common mistakes: missing space after the colon (`feat:message`), uppercase type
+(`Feat:`), trailing period on the subject.

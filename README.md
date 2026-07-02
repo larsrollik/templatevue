@@ -41,15 +41,15 @@ cd my-existing-project && copier update
 ## Release flow
 
 ```
-feature branch  →  git commit  →  pnpm release  →  git push --follow-tags
-              (commitlint)    (release-it bump + tag)
+feature branch  →  git commit  →  PR to main  →  lint + tests  →  merge
+              (commitlint)
                                          ↓
-                              PR to main  →  lint + tests  →  merge
+                              versioning.yml (on push to main):
+                              → release-it: bump + tag from commits → dispatch release.yml
                                          ↓
-                              tag triggers release.yml
+                              release.yml (on tag / dispatch):
                               → build Docker image
                               → push to GHCR (ghcr.io/<org>/<repo>)
-                              → squash main → prod
                               → GitHub release
 ```
 

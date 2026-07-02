@@ -1,0 +1,51 @@
+name: Versioning
+
+# Bump + tag only (release-it, driven from CI). The image build + GitHub release
+# are decoupled into release.yml, which a hand-pushed tag also triggers.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  actions: write  # to dispatch release.yml
+
+jobs:
+  version:
+    name: Bump and tag
+    runs-on: ubuntu-latest
+    # Skip the release commit release-it itself just pushed (avoids a loop).
+    if: "!startsWith(github.event.head_commit.message, 'chore: release')"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "[[ node_requires ]]"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Bump, tag, trigger release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          BEFORE=$(node -p "require('./package.json').version")
+          # release-it (.release-it.json): conventional-changelog bump, commit +
+          # tag + push; no GitHub release / npm publish here.
+          pnpm exec release-it --ci || true
+          AFTER=$(node -p "require('./package.json').version")
+          if [ "$BEFORE" = "$AFTER" ]; then
+            echo "No bumpable commits since last release — nothing to do."
+            exit 0
+          fi
+          # release-it already pushed the commit + tag. A GITHUB_TOKEN-pushed tag
+          # does NOT trigger release.yml's push:tags, so dispatch it explicitly.
+          gh workflow run release.yml -f tag="v${AFTER}"
