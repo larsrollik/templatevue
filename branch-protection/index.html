@@ -464,10 +464,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#recommended-rules-for-prod" class="md-nav__link">
+  <a href="#allow-versioningyml-to-push-back-to-main" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Recommended rules for prod
+        Allow versioning.yml to push back to main
       
     </span>
   </a>
@@ -542,10 +542,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#recommended-rules-for-prod" class="md-nav__link">
+  <a href="#allow-versioningyml-to-push-back-to-main" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Recommended rules for prod
+        Allow versioning.yml to push back to main
       
     </span>
   </a>
@@ -652,32 +652,14 @@
 </tr>
 </tbody>
 </table>
-<h2 id="recommended-rules-for-prod">Recommended rules for <code>prod</code><a class="headerlink" href="#recommended-rules-for-prod" title="Permanent link">&para;</a></h2>
-<p>Branch name pattern: <code>prod</code></p>
-<table>
-<thead>
-<tr>
-<th>Setting</th>
-<th>Value</th>
-<th>Reason</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Restrict who can push</td>
-<td>nobody / automation only</td>
-<td>Only <code>release.yml</code> (via GITHUB_TOKEN) should write here</td>
-</tr>
-<tr>
-<td>Require a pull request</td>
-<td>optional</td>
-<td><code>release.yml</code> pushes directly; a PR rule would block it unless the token has admin bypass</td>
-</tr>
-</tbody>
-</table>
+<h2 id="allow-versioningyml-to-push-back-to-main">Allow <code>versioning.yml</code> to push back to <code>main</code><a class="headerlink" href="#allow-versioningyml-to-push-back-to-main" title="Permanent link">&para;</a></h2>
+<p>There is no <code>prod</code> branch. On merge, <code>versioning.yml</code> commits the version bump and
+pushes the tag back to <code>main</code>. GitHub's default branch protection blocks this.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p><code>release.yml</code> pushes to <code>prod</code> using <code>GITHUB_TOKEN</code> with <code>permissions: contents: write</code>. If you enable "Require PR" on <code>prod</code>, you'll need to add a bypass rule for the <code>github-actions[bot]</code> actor (GitHub's branch protection UI supports this).</p>
+<p>If you require pull requests on <code>main</code>, add a bypass rule for the
+<code>github-actions[bot]</code> actor (GitHub's branch protection UI supports this), or the
+bump push will fail with a 403.</p>
 </div>
 <h2 id="required-status-check-name">Required status check name<a class="headerlink" href="#required-status-check-name" title="Permanent link">&para;</a></h2>
 <p>The aggregate job in <code>ci.yml</code> is named <code>CI</code>. This is what to enter in the required status checks field. It only passes when both <code>lint</code> and <code>test</code> succeed, and only runs when both have completed.</p>

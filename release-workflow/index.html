@@ -369,10 +369,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#how-release-it-determines-the-version-increment" class="md-nav__link">
+  <a href="#how-the-version-increment-is-determined" class="md-nav__link">
     <span class="md-ellipsis">
       
-        How release-it determines the version increment
+        How the version increment is determined
       
     </span>
   </a>
@@ -588,10 +588,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#how-release-it-determines-the-version-increment" class="md-nav__link">
+  <a href="#how-the-version-increment-is-determined" class="md-nav__link">
     <span class="md-ellipsis">
       
-        How release-it determines the version increment
+        How the version increment is determined
       
     </span>
   </a>
@@ -671,41 +671,40 @@
 
 
 <h1 id="release-workflow">Release workflow<a class="headerlink" href="#release-workflow" title="Permanent link">&para;</a></h1>
+<p>Releases are automated in CI on merge to <code>main</code> — there is <strong>no <code>prod</code> branch</strong> and no
+manual release step. <code>versioning.yml</code> bumps + tags; <code>release.yml</code> builds the image and
+cuts the GitHub release.</p>
 <h2 id="branch-topology">Branch topology<a class="headerlink" href="#branch-topology" title="Permanent link">&para;</a></h2>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>prod  ←── squash merge on each release (automated by release.yml)
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>main  ←── PR merges from feature/bug/hotfix branches
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>feature/*, bug/*, hotfix/*  ←── created from main
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>main  ←── PR merges from feature/bug/hotfix branches
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>feature/*, bug/*, hotfix/*  ←── created from main
 </span></code></pre></div>
 <h2 id="step-by-step">Step-by-step<a class="headerlink" href="#step-by-step" title="Permanent link">&para;</a></h2>
 <div class="language-sh highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># 1. Create a branch</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>git<span class="w"> </span>checkout<span class="w"> </span>main<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>pull
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span>feature/my-feature
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1"># 2. Commit — message format enforced by commitlint hook</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1"># 2. Commit — message format enforced by the commitlint hook</span>
 </span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat: add dashboard view&quot;</span>
 </span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="c1"># 3. Bump version locally</span>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>pnpm<span class="w"> </span>release<span class="w">        </span><span class="c1"># release-it reads commits, determines bump, creates tag</span>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">                    </span><span class="c1"># runs interactively — use --ci to skip prompts</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="c1"># 3. Push + open PR to main</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>git<span class="w"> </span>push<span class="w"> </span>-u<span class="w"> </span>origin<span class="w"> </span>HEAD
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>gh<span class="w"> </span>pr<span class="w"> </span>create<span class="w"> </span>--base<span class="w"> </span>main<span class="w"> </span>--title<span class="w"> </span><span class="s2">&quot;feat: add dashboard view&quot;</span>
 </span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>
-</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="c1"># 4. Push branch + tag</span>
-</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>git<span class="w"> </span>push<span class="w"> </span>--follow-tags
-</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>
-</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="c1"># 5. Open PR to main</span>
-</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>gh<span class="w"> </span>pr<span class="w"> </span>create<span class="w"> </span>--base<span class="w"> </span>main<span class="w"> </span>--title<span class="w"> </span><span class="s2">&quot;feat: add dashboard view&quot;</span>
-</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>
-</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="c1"># 6. CI runs lint + typecheck on push; tests on PR</span>
-</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="c1"># 7. Merge PR</span>
-</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>gh<span class="w"> </span>pr<span class="w"> </span>merge<span class="w"> </span>--squash<span class="w"> </span>--delete-branch
-</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>
-</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="c1"># 8. Tag push triggers release.yml:</span>
-</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="c1">#    - builds Docker image</span>
-</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="c1">#    - pushes to GHCR (ghcr.io/&lt;org&gt;/&lt;repo&gt;:&lt;version&gt; and :latest)</span>
-</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="c1">#    - squash-merges main → prod</span>
-</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="c1">#    - generates release notes from git log</span>
-</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="c1">#    - creates GitHub release</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="c1"># 4. CI runs lint + typecheck on push; tests on PR — merge is blocked until green</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="c1"># 5. Merge PR</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>gh<span class="w"> </span>pr<span class="w"> </span>merge<span class="w"> </span>--squash<span class="w"> </span>--delete-branch
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="c1"># 6. versioning.yml fires on push to main:</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="c1">#    - release-it reads commits since the last tag, determines the increment,</span>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="c1">#      commits &quot;chore: release vX.Y.Z&quot;, tags it, and pushes</span>
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="c1">#    - dispatches release.yml</span>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="c1"># 7. release.yml (on the tag / dispatch):</span>
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="c1">#    - builds the Docker image</span>
+</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="c1">#    - pushes to GHCR (ghcr.io/&lt;org&gt;/&lt;repo&gt;:&lt;version&gt;, :&lt;major.minor&gt;, :latest)</span>
+</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="c1">#    - creates a GitHub release with auto-generated notes</span>
 </span></code></pre></div>
-<h2 id="how-release-it-determines-the-version-increment">How release-it determines the version increment<a class="headerlink" href="#how-release-it-determines-the-version-increment" title="Permanent link">&para;</a></h2>
+<h2 id="how-the-version-increment-is-determined">How the version increment is determined<a class="headerlink" href="#how-the-version-increment-is-determined" title="Permanent link">&para;</a></h2>
 <p><code>release-it</code> with <code>@release-it/conventional-changelog</code> reads commits since the last tag:</p>
 <table>
 <thead>
@@ -729,11 +728,11 @@
 </tr>
 </tbody>
 </table>
-<p>Override manually:</p>
-<div class="language-sh highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>pnpm<span class="w"> </span>release<span class="w"> </span>--increment<span class="w"> </span>patch
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>pnpm<span class="w"> </span>release<span class="w"> </span>--increment<span class="w"> </span>minor
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>pnpm<span class="w"> </span>release<span class="w"> </span>--increment<span class="w"> </span>major
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>pnpm<span class="w"> </span>release<span class="w"> </span>--ci
+<p>If there are no bumpable commits since the last tag, <code>versioning.yml</code> makes no change
+and nothing is released. To cut a release manually (or override the increment), run
+locally and push the tag — a hand-pushed tag triggers <code>release.yml</code> directly:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>pnpm<span class="w"> </span>release<span class="w"> </span>--ci<span class="w">                     </span><span class="c1"># bump from commits, tag, push</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>pnpm<span class="w"> </span>release<span class="w"> </span>--ci<span class="w"> </span>--increment<span class="w"> </span>minor<span class="w">   </span><span class="c1"># force a specific increment</span>
 </span></code></pre></div>
 <h2 id="image-tags-produced">Image tags produced<a class="headerlink" href="#image-tags-produced" title="Permanent link">&para;</a></h2>
 <p>Each release pushes three tags to GHCR:</p>
@@ -780,14 +779,15 @@
 <li>Re-stages auto-fixed files</li>
 </ol>
 <h2 id="common-issues">Common issues<a class="headerlink" href="#common-issues" title="Permanent link">&para;</a></h2>
-<p><strong><code>pnpm release</code> fails with git error</strong></p>
+<p><strong><code>versioning.yml</code> didn't release after a merge</strong></p>
 <ul>
-<li>Detached HEAD → <code>git checkout main</code> first</li>
-<li>Uncommitted changes → commit or stash</li>
-<li>Tag already exists → <code>git tag -d v1.2.3</code> to remove locally, <code>git push origin :refs/tags/v1.2.3</code> to remove remotely</li>
+<li>No bumpable commits since the last tag → nothing to release (expected).</li>
+<li>Actions can't push to <code>main</code> → allow <code>github-actions[bot]</code> to bypass branch
+  protection (see <a href="../branch-protection/">Branch protection</a>).</li>
 </ul>
-<p><strong>commitlint rejects message</strong></p>
-<p>Common mistakes: missing space after colon (<code>feat:message</code>), uppercase type (<code>Feat:</code>), period at end of subject.</p>
+<p><strong>commitlint rejects a message</strong></p>
+<p>Common mistakes: missing space after the colon (<code>feat:message</code>), uppercase type
+(<code>Feat:</code>), trailing period on the subject.</p>
 
 
 

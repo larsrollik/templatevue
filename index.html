@@ -713,7 +713,7 @@
 </tr>
 <tr>
 <td><strong>release-it</strong></td>
-<td>Local version bump + tag from commit history</td>
+<td>Conventional-commit version bump + tag (run in CI by <code>versioning.yml</code>)</td>
 </tr>
 <tr>
 <td><strong>nginx</strong></td>
@@ -834,8 +834,9 @@
 </span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>pnpm<span class="w"> </span>format<span class="w">         </span><span class="c1"># prettier --write .</span>
 </span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>pnpm<span class="w"> </span>typecheck<span class="w">      </span><span class="c1"># vue-tsc --build --force</span>
 </span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>pnpm<span class="w"> </span>docs:dev<span class="w">       </span><span class="c1"># vitepress dev server</span>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>pnpm<span class="w"> </span>release<span class="w">        </span><span class="c1"># release-it: bump version, create tag</span>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>git<span class="w"> </span>push<span class="w"> </span>--follow-tags<span class="w">  </span><span class="c1"># push commits + tag → triggers release workflow</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>pnpm<span class="w"> </span>release<span class="w"> </span>--ci<span class="w">   </span><span class="c1"># manual release override (bump + tag + push).</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">                    </span><span class="c1"># Releases run automatically in CI on merge to main —</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">                    </span><span class="c1"># this is only for a manual/off-cycle cut.</span>
 </span></code></pre></div>
 <h2 id="generated-project-structure">Generated project structure<a class="headerlink" href="#generated-project-structure" title="Permanent link">&para;</a></h2>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>my-project/
