@@ -42,7 +42,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: ["20", "22"]
+[% if node_requires == "24" %]
+        node-version: ["24"]
+[% else %]
+        node-version: ["[[ node_requires ]]", "24"]
+[% endif %]
     steps:
       - uses: actions/checkout@v6
 
