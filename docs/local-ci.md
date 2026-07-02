@@ -48,8 +48,11 @@ For this template's workflows, **Medium** is sufficient.
 
 ## Passing secrets locally
 
+Most workflows need no secrets locally — the release image push uses `GITHUB_TOKEN`
+(provided automatically in CI). To test a job that needs a token:
+
 ```sh
-act push --secret UV_PUBLISH_TOKEN=<token>
+act push --secret GITHUB_TOKEN=<token>
 # or using a secrets file:
 act push --secret-file .env.act
 ```
@@ -57,7 +60,7 @@ act push --secret-file .env.act
 `.env.act` format (add to `.gitignore`):
 
 ```
-UV_PUBLISH_TOKEN=pypi-...
+GITHUB_TOKEN=ghp_...
 ANTHROPIC_API_KEY=sk-ant-...
 ```
 
@@ -65,4 +68,4 @@ ANTHROPIC_API_KEY=sk-ant-...
 
 - `act` doesn't support all GitHub Actions features (e.g. `workflow_run`, some contexts)
 - Some actions that call back to GitHub APIs may behave differently
-- `secret-scanner/action` may not work locally — skip with `act push -j lint -j test`
+- Docker build/push jobs may need extra buildx/registry setup under `act`
