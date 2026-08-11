@@ -48,7 +48,8 @@ jobs:
           test -f "template/.github/workflows/ci.yml"
           test -f "template/.github/workflows/versioning.yml"
           test -f "template/.github/workflows/release.yml"
-          test -f "template/.github/workflows/docs.yml"
+          # docs.yml / pr-review.yml are conditionally-named (optional features);
+          # their presence is checked in the generate step, not here.
           echo "All expected template files present."
 
       - name: Validate non-template YAML files
