@@ -15,7 +15,9 @@ on:
 
 permissions:
   contents: write
+[% if enable_docker_publishing %]
   packages: write
+[% endif %]
 
 jobs:
   release:
@@ -27,6 +29,7 @@ jobs:
           ref: "${{ github.event.inputs.tag || github.ref }}"
           fetch-depth: 0
 
+[% if enable_docker_publishing %]
       - name: Compute image tags
         id: meta
         run: |
@@ -60,6 +63,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+[% endif %]
 
       - name: Create GitHub release
         env:

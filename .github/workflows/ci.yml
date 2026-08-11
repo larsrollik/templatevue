@@ -92,9 +92,11 @@ jobs:
           grep -q "try_files" template/docker/nginx.conf
           echo "All content checks passed."
 
-      - name: Generate test project
+      - name: Generate test project (all optional features on)
         run: |
           pip install copier
+          # Enable the optional publish/review workflows so their files render
+          # and get checked below (the off path is verified afterwards).
           copier copy --vcs-ref HEAD . /tmp/test-output --defaults --trust \
             --data "project_name=Test App" \
             --data "project_slug=test-app" \
@@ -107,7 +109,10 @@ jobs:
             --data "node_requires=22" \
             --data "traefik_host=test-app.example.com" \
             --data "secret_config_path=/run/secrets/test-app-config.json" \
-            --data "year=2026"
+            --data "year=2026" \
+            --data "enable_docker_publishing=true" \
+            --data "enable_docs_publishing=true" \
+            --data "enable_llm_pr_review=true"
 
       - name: Check generated project
         run: |
@@ -131,8 +136,29 @@ jobs:
           grep -q "Test App" /tmp/test-output/src/App.vue                  && echo "ok: name in App.vue"
           grep -q "test-app.example.com" /tmp/test-output/docker-compose.yml          && echo "ok: traefik_host in docker-compose"
           grep -q "test-app-config.json" /tmp/test-output/docker/40-runtime-config.sh && echo "ok: secret_config_path in entrypoint"
-          grep -q "ghcr.io/testuser/test-app" /tmp/test-output/.github/workflows/release.yml && echo "ok: GHCR image in release.yml"
+          grep -q "ghcr.io/testuser/test-app" /tmp/test-output/.github/workflows/release.yml && echo "ok: GHCR image in release.yml (enabled)"
+          grep -q "create-github-app-token" /tmp/test-output/.github/workflows/versioning.yml && echo "ok: adaptive App bump in versioning"
+          test -x /tmp/test-output/scripts/setup_repo.sh              && echo "ok: setup_repo.sh (executable)"
+          test -x /tmp/test-output/scripts/setup_branch_protection.sh && echo "ok: setup_branch_protection.sh (executable)"
+          test -f /tmp/test-output/docs/repository-setup.md          && echo "ok: repository-setup.md"
+          test -f /tmp/test-output/.github/workflows/docs.yml        && echo "ok: docs.yml (enabled)"
+          test -f /tmp/test-output/.github/workflows/pr-review.yml   && echo "ok: pr-review.yml (enabled)"
           echo "Generated project checks passed."
+
+      - name: Check optional features gate off by default
+        run: |
+          copier copy --vcs-ref HEAD . /tmp/test-output-off --defaults --trust \
+            --data "project_name=Test App" --data "project_slug=test-app" \
+            --data "project_pascal=TestApp" --data "project_description=A test app" \
+            --data "author_name=Test Author" --data "author_email=test@example.com" \
+            --data "github_username=testuser" --data "github_repo=test-app" \
+            --data "node_requires=22" --data "traefik_host=test-app.example.com" \
+            --data "secret_config_path=/run/secrets/test-app-config.json" --data "year=2026"
+          ! test -e /tmp/test-output-off/.github/workflows/docs.yml      && echo "ok: no docs.yml"
+          ! test -e /tmp/test-output-off/.github/workflows/pr-review.yml && echo "ok: no pr-review.yml"
+          ! grep -q "build-push-action" /tmp/test-output-off/.github/workflows/release.yml && echo "ok: no image push"
+          ! grep -q "packages: write" /tmp/test-output-off/.github/workflows/release.yml && echo "ok: no packages:write"
+          echo "Optional-feature gating (off) valid."
 
   lint:
     name: Lint

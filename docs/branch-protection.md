@@ -1,35 +1,45 @@
 # Branch protection
 
-Configure branch protection rules on GitHub to enforce the gitflow.
+Protect `main` so changes go through a reviewed PR and a green CI gate, while the
+auto-bump workflow can still push the version tag. Protection is optional — a
+fresh project works unprotected out of the box.
 
-## Recommended rules for `main`
+## Automated setup (recommended)
 
-**Repository → Settings → Branches → Add rule**, branch name pattern: `main`
+Generated projects ship scripts for this. From the project root:
 
-| Setting | Value | Reason |
-|---|---|---|
-| Require a pull request before merging | ✓ | No direct pushes to main |
-| Required approvals | 1+ | At least one review |
-| Dismiss stale reviews on new commits | ✓ | Re-review after force-push |
-| Require status checks to pass | ✓ | Blocks merge on CI failure |
-| Required status checks | `CI` | The aggregate job in `ci.yml` |
-| Require branches to be up to date | ✓ | No stale merges |
-| Restrict who can push | maintainers only | Prevents accidental direct pushes |
+```sh
+bash scripts/setup_repo.sh          # guided: create repo → install App → protect
+# or, on a repo that already exists:
+bash scripts/setup_branch_protection.sh
+```
 
-## Allow `versioning.yml` to push back to `main`
+`setup_branch_protection.sh` installs a `main-protected` ruleset via the GitHub
+API: require a PR + approving review + the `CI` status check on the default
+branch, block force-pushes and deletion, and bypass **repository admins** and the
+**release-bot App**. It is idempotent; tune with `--reviews N` / `--check <job>`.
 
-There is no `prod` branch. On merge, `versioning.yml` commits the version bump and
-pushes the tag back to `main`. GitHub's default branch protection blocks this.
+The full setup — including the App, the exact permissions it needs, and the
+`CI_BOT_APP_ID` / `CI_BOT_PRIVATE_KEY` credentials — is documented in the
+generated project's own `docs/repository-setup.md`.
 
-!!! note
-    If you require pull requests on `main`, add a bypass rule for the
-    `github-actions[bot]` actor (GitHub's branch protection UI supports this), or the
-    bump push will fail with a 403.
+## Why an App (not `github-actions[bot]`)
+
+A protected `main` blocks direct pushes, including `versioning.yml`'s release-it
+bump. A GitHub App is an identifiable actor the ruleset can add to its bypass
+list, and (unlike `github-actions[bot]`) an App-pushed tag triggers `release.yml`.
+`versioning.yml` is adaptive: it uses the App when `CI_BOT_APP_ID` is set, else
+falls back to `github-actions[bot]` on an unprotected repo. So the same repo
+works before and after you protect it — no file changes.
 
 ## Required status check name
 
-The aggregate job in `ci.yml` is named `CI`. This is what to enter in the required status checks field. It only passes when both `lint` and `test` succeed, and only runs when both have completed.
+The aggregate job in `ci.yml` is named `CI`; that is the context the ruleset
+requires. It passes only when `lint` and `test` both succeed.
 
-## Rulesets (modern alternative)
+## Manual alternative
 
-GitHub now offers **Rulesets** (Repository → Settings → Rules → Rulesets) as a more flexible replacement for classic branch protection. Rulesets support bypass lists, actor-based rules, and can be applied to tag patterns too (useful for protecting `v*` tags from deletion).
+If you prefer to click through it, **Settings → Rules → Rulesets → New branch
+ruleset** targeting the default branch, with the same rules and bypass actors as
+above. Classic **Settings → Branches** protection also works, but Rulesets are
+the modern path and are what the script uses.

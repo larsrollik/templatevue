@@ -54,6 +54,9 @@ pnpm dev        # http://localhost:5173
 | `secret_config_path` | path | Runtime `config.json` secret mount path |
 | `year` | free text | Copyright year |
 | `license_type` | `noncommercial` (default) / `bsd3` | Licence for the generated project |
+| `enable_docker_publishing` | `false` / `true`, default `false` | Build + push the container image to GHCR in `release.yml`. Off still cuts the GitHub release. |
+| `enable_docs_publishing` | `false` / `true`, default `false` | Add the `docs.yml` GitHub Pages deploy workflow. |
+| `enable_llm_pr_review` | `false` / `true`, default `false` | Add the optional `pr-review.yml` LLM-review workflow. |
 
 ## Apply template updates to an existing project
 

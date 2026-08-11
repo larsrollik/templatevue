@@ -35,8 +35,8 @@ gh pr merge --squash --delete-branch
 #    - dispatches release.yml
 
 # 7. release.yml (on the tag / dispatch):
-#    - builds the Docker image
-#    - pushes to GHCR (ghcr.io/<org>/<repo>:<version>, :<major.minor>, :latest)
+#    - builds + pushes the Docker image to GHCR (only if enable_docker_publishing)
+#      (ghcr.io/<org>/<repo>:<version>, :<major.minor>, :latest)
 #    - creates a GitHub release with auto-generated notes
 ```
 
@@ -96,8 +96,9 @@ The `pre-commit` hook runs `lint-staged`:
 **`versioning.yml` didn't release after a merge**
 
 - No bumpable commits since the last tag → nothing to release (expected).
-- Actions can't push to `main` → allow `github-actions[bot]` to bypass branch
-  protection (see [Branch protection](branch-protection.md)).
+- Can't push to a protected `main` → install the release-bot App so the bump is
+  pushed by a ruleset bypass actor (see [Branch protection](branch-protection.md)
+  and the generated `docs/repository-setup.md`).
 
 **commitlint rejects a message**
 

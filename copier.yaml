@@ -93,3 +93,18 @@ license_type:
     "Custom noncommercial (MSW default)": noncommercial
     "BSD-3-Clause (deployable apps / no research IP)": bsd3
   default: noncommercial
+
+enable_docker_publishing:
+  type: bool
+  help: "Build and push the container image to GHCR from the release workflow? Off keeps the GitHub release but drops the image build/push (and the packages:write permission)."
+  default: false
+
+enable_docs_publishing:
+  type: bool
+  help: "Add the Docs workflow that deploys the site to GitHub Pages on push? Off omits the deploy workflow (build locally regardless)."
+  default: false
+
+enable_llm_pr_review:
+  type: bool
+  help: "Add the optional LLM PR-review workflow (Claude/Ollama, commented templates)? Off omits the workflow and its 'not configured' placeholder check."
+  default: false
