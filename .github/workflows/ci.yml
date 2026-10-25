@@ -45,9 +45,19 @@ jobs:
           test -f template/tsconfig.node.json
           test -f template/package.json
           test -f template/vite.config.ts
-          test -f "template/.github/workflows/ci.yml"
-          test -f "template/.github/workflows/versioning.yml"
-          test -f "template/.github/workflows/release.yml"
+          # The CI directories are conditionally NAMED, so their on-disk paths ARE
+          # the copier expressions - not ".github" / ".forgejo". Asserting the
+          # rendered names would pass only while the directories were plain.
+          GH="template/[% if ci_platform in ['github','both'] %].github[% endif %]"
+          FJ="template/[% if ci_platform in ['forgejo','both'] %].forgejo[% endif %]"
+          test -f "$GH/workflows/ci.yml"
+          test -f "$GH/workflows/versioning.yml"
+          test -f "$GH/workflows/release.yml"
+          # Forgejo ships ci.yml + release.yml and deliberately no versioning.yml: a
+          # bump cannot be git-pushed from inside a job there, so versioning and
+          # release are one workflow that commits through the contents API.
+          test -f "$FJ/workflows/ci.yml"
+          test -f "$FJ/workflows/release.yml"
           # docs.yml / pr-review.yml are conditionally-named (optional features);
           # their presence is checked in the generate step, not here.
           echo "All expected template files present."
@@ -85,8 +95,15 @@ jobs:
           # vite/client types declared
           grep -q "vite/client" template/src/env.d.ts
           # Docker build/push and GHCR in release workflow
-          grep -q "docker/build-push-action" "template/.github/workflows/release.yml"
-          grep -q "ghcr\.io" "template/.github/workflows/release.yml"
+          # Redefined: each `run:` is its own shell. grep on a missing path exits 2.
+          GH="template/[% if ci_platform in ['github','both'] %].github[% endif %]"
+          FJ="template/[% if ci_platform in ['forgejo','both'] %].forgejo[% endif %]"
+          grep -q "docker/build-push-action" "$GH/workflows/release.yml"
+          grep -q "ghcr\\.io" "$GH/workflows/release.yml"
+          # The forgejo release must bump through the contents API and must NOT push
+          # to ghcr.io - its registry is the instance host, derived at runtime.
+          grep -q "api/v1/repos" "$FJ/workflows/release.yml"
+          ! grep -qE "ghcr\\.io/" "$FJ/workflows/release.yml"
           # runtime config entrypoint wired into Dockerfile
           grep -q "40-runtime-config\.sh" template/Dockerfile
           # SPA fallback in nginx config

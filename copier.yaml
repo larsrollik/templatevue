@@ -108,3 +108,12 @@ enable_llm_pr_review:
   type: bool
   help: "Add the optional LLM PR-review workflow (Claude/Ollama, commented templates)? Off omits the workflow and its 'not configured' placeholder check."
   default: false
+
+ci_platform:
+  type: str
+  help: "Which CI to ship. Both is the safe default; pick one to avoid carrying a definition you never run."
+  default: both
+  choices:
+    "Both GitHub Actions and Forgejo Actions": both
+    "GitHub Actions only (.github/workflows)": github
+    "Forgejo Actions only (.forgejo/workflows)": forgejo
