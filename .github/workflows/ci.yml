@@ -45,9 +45,19 @@ jobs:
           test -f template/tsconfig.node.json
           test -f template/package.json
           test -f template/vite.config.ts
-          test -f "template/.github/workflows/ci.yml"
-          test -f "template/.github/workflows/versioning.yml"
-          test -f "template/.github/workflows/release.yml"
+          # The CI directories are conditionally NAMED, so their on-disk paths ARE
+          # the copier expressions - not ".github" / ".forgejo". Asserting the
+          # rendered names would pass only while the directories were plain.
+          GH="template/[% if ci_platform in ['github','both'] %].github[% endif %]"
+          FJ="template/[% if ci_platform in ['forgejo','both'] %].forgejo[% endif %]"
+          test -f "$GH/workflows/ci.yml"
+          test -f "$GH/workflows/versioning.yml"
+          test -f "$GH/workflows/release.yml"
+          # Forgejo ships ci.yml + release.yml and deliberately no versioning.yml: a
+          # bump cannot be git-pushed from inside a job there, so versioning and
+          # release are one workflow that commits through the contents API.
+          test -f "$FJ/workflows/ci.yml"
+          test -f "$FJ/workflows/release.yml"
           # docs.yml / pr-review.yml are conditionally-named (optional features);
           # their presence is checked in the generate step, not here.
           echo "All expected template files present."
@@ -85,8 +95,15 @@ jobs:
           # vite/client types declared
           grep -q "vite/client" template/src/env.d.ts
           # Docker build/push and GHCR in release workflow
-          grep -q "docker/build-push-action" "template/.github/workflows/release.yml"
-          grep -q "ghcr\.io" "template/.github/workflows/release.yml"
+          # Redefined: each `run:` is its own shell. grep on a missing path exits 2.
+          GH="template/[% if ci_platform in ['github','both'] %].github[% endif %]"
+          FJ="template/[% if ci_platform in ['forgejo','both'] %].forgejo[% endif %]"
+          grep -q "docker/build-push-action" "$GH/workflows/release.yml"
+          grep -q "ghcr\\.io" "$GH/workflows/release.yml"
+          # The forgejo release must bump through the contents API and must NOT push
+          # to ghcr.io - its registry is the instance host, derived at runtime.
+          grep -q "api/v1/repos" "$FJ/workflows/release.yml"
+          ! grep -qE "ghcr\\.io/" "$FJ/workflows/release.yml"
           # runtime config entrypoint wired into Dockerfile
           grep -q "40-runtime-config\.sh" template/Dockerfile
           # SPA fallback in nginx config
@@ -114,6 +131,29 @@ jobs:
             --data "enable_docker_publishing=true" \
             --data "enable_docs_publishing=true" \
             --data "enable_llm_pr_review=true"
+
+      - name: Rendered workflows must have no blank-first-line block scalars
+        run: |
+          # Forgejo's jobparser REJECTS a literal block scalar whose first line is blank,
+          # and PyYAML accepts it - so YAML linting cannot catch this. A `[% raw %]` tag
+          # on its own line after `run: |` renders to exactly that blank line, which
+          # silently disables Actions for the WHOLE repo: Forgejo parses every file in the
+          # workflows directory per event, so one bad file fails the run before a runner
+          # is involved. labwatch-ui shipped with this and ran no CI at all for 3 months.
+          python3 - <<'PYEOF'
+          import pathlib, re, sys
+          bad = []
+          for d in ('.github/workflows', '.forgejo/workflows'):
+              for f in pathlib.Path('/tmp/test-output', d).glob('*.yml'):
+                  t = f.read_text()
+                  for m in re.finditer(r'run:\s*\|\s*\n(\s*\n)', t):
+                      bad.append(f"{f}: line {t[:m.start()].count(chr(10)) + 1}")
+          if bad:
+              print("blank line directly after 'run: |' - Forgejo jobparser will reject:")
+              print("\n".join("  " + b for b in bad))
+              sys.exit(1)
+          print("ok: no blank-first-line block scalars in the rendered workflows")
+          PYEOF
 
       - name: Check generated project
         run: |

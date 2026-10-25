@@ -1,0 +1,194 @@
+name: Release
+
+# SINGLE-WORKFLOW release, and the one real structural difference from the GitHub side.
+#
+# On GitHub this is two files: versioning.yml bumps and tags, then the tag triggers
+# release.yml. That split cannot work here, for two reasons:
+#
+#   1. versioning.yml pushes the bump with git. On Forgejo a `git push` ORIGINATING
+#      INSIDE an Actions job is attributed to the internal Actions user (uid -2), which
+#      the pre-receive hook cannot resolve, so a push to a PROTECTED main is refused
+#      BEFORE the push whitelist is consulted - and the client sees "Internal Server
+#      Error (no message for end users)", which reads as a broken server rather than a
+#      refused push. No token, team or whitelist entry changes that.
+#   2. versioning.yml's fallback path dispatches release.yml with `gh workflow run`,
+#      and there is no Forgejo equivalent.
+#
+# So the bump is made through the CONTENTS API, which creates the commit server-side and
+# resolves the author from the token, putting it in the ordinary permission check where a
+# whitelisted account succeeds. Tag, image and release then all happen in this one run,
+# which also removes the question of whether an API-created tag fires `push: tags`.
+#
+# There is no GitHub App path here: Forgejo has no App model. The token below is a real
+# account's token.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+[% if enable_docker_publishing %]
+  packages: write
+[% endif %]
+
+# Serialise per branch so back-to-back merges cannot race on the bump. Two parallel runs
+# would bump from the same tip and compute the same version; the second contents-API call
+# then carries a stale blob sha and is refused. cancel-in-progress is deliberately false:
+# cancelling between the commit and the tag leaves main bumped with no tag.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  release:
+    name: Bump, tag, release
+    runs-on: ubuntu-latest
+    # Skip this workflow's own bump commit, or it re-triggers itself forever.
+    if: "!startsWith(github.event.head_commit.message, 'bump:')"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          # release-it reads tags to find the last release; a shallow clone has none.
+          fetch-depth: 0
+          token: ${{ secrets.VERSION_PUSH_TOKEN }}
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: latest
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "[[ node_requires ]]"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Bump (via contents API) + tag
+        id: bump
+        env:
+          # A real account's token with write on this repo, named in the branch-protection
+          # push whitelist. The automatic token cannot be used: it has no resolvable
+          # identity to whitelist.
+          FJ_TOKEN: ${{ secrets.VERSION_PUSH_TOKEN }}
+        run: |
+          set -euo pipefail
+          BEFORE="$(node -p "require('./package.json').version")"
+
+          # release-it is used ONLY as the conventional-commits version calculator: every
+          # git and publish operation is off, so it just rewrites package.json in the
+          # worktree. .release-it.json sets git.push: true, which is right on GitHub and
+          # fatal here; CLI flags override it. `pnpm exec` because release-it is a
+          # devDependency, so its binary is not on PATH.
+          pnpm exec release-it --ci \
+            --no-git.commit --no-git.tag --no-git.push \
+            --no-github.release --no-npm.publish || true
+
+          AFTER="$(node -p "require('./package.json').version")"
+          if [ "$BEFORE" = "$AFTER" ]; then
+            echo "no bumpable commits since last tag - skipping release."
+            echo "skipped=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          TAG="v${AFTER}"
+          CHANGED="$(git diff --name-only)"
+          [ -n "$CHANGED" ] || { echo "release-it reported ${BEFORE} -> ${AFTER} but changed no files"; exit 1; }
+          echo "bumping ${BEFORE} -> ${AFTER}; files: $(echo "$CHANGED" | tr '\n' ' ')"
+
+          python3 - "$TAG" $CHANGED <<'PY'
+          import base64, json, os, sys, urllib.request
+
+          tag, paths = sys.argv[1], sys.argv[2:]
+          api = f"{os.environ['GITHUB_SERVER_URL']}/api/v1/repos/{os.environ['GITHUB_REPOSITORY']}"
+          tok = os.environ["FJ_TOKEN"]
+
+          def req(method, path, body=None):
+              data = json.dumps(body).encode() if body is not None else None
+              r = urllib.request.Request(
+                  api + path, data=data, method=method,
+                  headers={"Authorization": f"token {tok}", "Content-Type": "application/json"},
+              )
+              with urllib.request.urlopen(r) as resp:
+                  raw = resp.read()
+              return json.loads(raw) if raw else None
+
+          files = []
+          for p in paths:
+              info = req("GET", f"/contents/{p}?ref=main")  # current blob sha (update op)
+              content = base64.b64encode(open(p, "rb").read()).decode()
+              files.append({"operation": "update", "path": p, "content": content, "sha": info["sha"]})
+
+          resp = req("POST", "/contents", {"branch": "main", "message": f"bump: {tag}", "files": files})
+          # FilesResponse: resp["commit"] is a FileCommitResponse carrying sha DIRECTLY -
+          # there is no further nested "commit". The tag must point at THIS sha: the
+          # server-side commit has a different committer and timestamp, so a different sha
+          # than anything computed locally.
+          sha = resp["commit"]["sha"]
+          print(f"committed {sha} on main: bump {tag}")
+          req("POST", "/tags", {"tag_name": tag, "target": sha})
+          print(f"tagged {tag}")
+          PY
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$AFTER" >> "$GITHUB_OUTPUT"
+[% if enable_docker_publishing %]
+      - name: Compute image tags
+        if: steps.bump.outputs.skipped != 'true'
+        id: meta
+        env:
+          VER: ${{ steps.bump.outputs.version }}
+        run: |
+          set -euo pipefail
+          # Forgejo's package registry is on the instance host, so it is derived from
+          # GITHUB_SERVER_URL rather than hard-coded the way GitHub's registry host is.
+          HOST="${GITHUB_SERVER_URL#https://}"; HOST="${HOST#http://}"
+          IMG="${HOST}/${GITHUB_REPOSITORY}"
+          MAJMIN="$(echo "$VER" | cut -d. -f1-2)"
+          {
+            echo "tags<<EOF"
+            echo "${IMG}:${VER}"
+            echo "${IMG}:${MAJMIN}"
+            echo "${IMG}:latest"
+            echo "EOF"
+            echo "registry=${HOST}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Log in to the Forgejo registry
+        if: steps.bump.outputs.skipped != 'true'
+        uses: docker/login-action@v4
+        with:
+          # The BARE host from the step above. GITHUB_SERVER_URL carries the scheme, and
+          # docker/login-action wants a registry host without one.
+          registry: ${{ steps.meta.outputs.registry }}
+          # A token with package:write. Newer Forgejo may accept the automatic token for
+          # the registry, but that is not relied on here.
+          username: ${{ secrets.PACKAGE_PUSH_USER }}
+          password: ${{ secrets.PACKAGE_PUSH_TOKEN }}
+
+      - name: Set up Docker Buildx
+        if: steps.bump.outputs.skipped != 'true'
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build and push
+        if: steps.bump.outputs.skipped != 'true'
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+[% endif %]
+      - name: Create Forgejo release
+        if: steps.bump.outputs.skipped != 'true'
+        env:
+          FJ_TOKEN: ${{ secrets.VERSION_PUSH_TOKEN }}
+          TAG: ${{ steps.bump.outputs.tag }}
+        run: |
+          set -euo pipefail
+          curl -fsS -X POST \
+            -H "Authorization: token ${FJ_TOKEN}" -H 'Content-Type: application/json' \
+            "${GITHUB_SERVER_URL}/api/v1/repos/${GITHUB_REPOSITORY}/releases" \
+            -d "{\"tag_name\":\"${TAG}\",\"name\":\"${TAG}\",\"body\":\"Release ${TAG}\"}"
