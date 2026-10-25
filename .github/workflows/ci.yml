@@ -132,6 +132,29 @@ jobs:
             --data "enable_docs_publishing=true" \
             --data "enable_llm_pr_review=true"
 
+      - name: Rendered workflows must have no blank-first-line block scalars
+        run: |
+          # Forgejo's jobparser REJECTS a literal block scalar whose first line is blank,
+          # and PyYAML accepts it - so YAML linting cannot catch this. A `[% raw %]` tag
+          # on its own line after `run: |` renders to exactly that blank line, which
+          # silently disables Actions for the WHOLE repo: Forgejo parses every file in the
+          # workflows directory per event, so one bad file fails the run before a runner
+          # is involved. labwatch-ui shipped with this and ran no CI at all for 3 months.
+          python3 - <<'PYEOF'
+          import pathlib, re, sys
+          bad = []
+          for d in ('.github/workflows', '.forgejo/workflows'):
+              for f in pathlib.Path('/tmp/test-output', d).glob('*.yml'):
+                  t = f.read_text()
+                  for m in re.finditer(r'run:\s*\|\s*\n(\s*\n)', t):
+                      bad.append(f"{f}: line {t[:m.start()].count(chr(10)) + 1}")
+          if bad:
+              print("blank line directly after 'run: |' - Forgejo jobparser will reject:")
+              print("\n".join("  " + b for b in bad))
+              sys.exit(1)
+          print("ok: no blank-first-line block scalars in the rendered workflows")
+          PYEOF
+
       - name: Check generated project
         run: |
           echo "=== generated files ===" && find /tmp/test-output -not -path '*/.git/*' | sort
