@@ -17,7 +17,7 @@ jobs:
     # Skip the bump the bot itself just pushed (avoids a loop).
     if: "!startsWith(github.event.head_commit.message, 'bump:')"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 

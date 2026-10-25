@@ -50,7 +50,7 @@ jobs:
     # Skip this workflow's own bump commit, or it re-triggers itself forever.
     if: "!startsWith(github.event.head_commit.message, 'bump:')"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: main
           # release-it reads tags to find the last release; a shallow clone has none.
