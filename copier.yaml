@@ -117,3 +117,27 @@ ci_platform:
     "Both GitHub Actions and Forgejo Actions": both
     "GitHub Actions only (.github/workflows)": github
     "Forgejo Actions only (.forgejo/workflows)": forgejo
+
+enable_renovate:
+  type: bool
+  help: "Add a nightly Renovate workflow and renovate.json (GitHub only)? Renovate runs as the GitHub App whose secrets are named below, so CI runs on its PRs."
+  when: "[[ ci_platform in ['github','both'] ]]"
+  default: true
+
+renovate_preset:
+  type: str
+  help: "Renovate preset that renovate.json extends. The default is the shared `renovate-config` repo of the same account or org; use `config:recommended` if there is none."
+  when: "[[ enable_renovate and ci_platform in ['github','both'] ]]"
+  default: "github>[[ github_username ]]/renovate-config"
+
+ci_app_client_id_secret:
+  type: str
+  help: "Actions secret holding the GitHub App Client ID (Iv23li...) Renovate mints its token with. Rename per org (e.g. MYORG_CI_CLIENT_ID) or keep the generic default."
+  when: "[[ enable_renovate and ci_platform in ['github','both'] ]]"
+  default: CI_APP_CLIENT_ID
+
+ci_app_private_key_secret:
+  type: str
+  help: "Actions secret holding the GitHub App private key (.pem) paired with that Client ID."
+  when: "[[ enable_renovate and ci_platform in ['github','both'] ]]"
+  default: CI_APP_PRIVATE_KEY
