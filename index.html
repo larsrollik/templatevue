@@ -19,7 +19,7 @@
       
       
       <link rel="icon" href="assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
     
     
       
@@ -834,6 +834,26 @@
 <td><code>false</code> / <code>true</code>, default <code>false</code></td>
 <td>Add the optional <code>pr-review.yml</code> LLM-review workflow.</td>
 </tr>
+<tr>
+<td><code>ci_platform</code></td>
+<td><code>both</code> (default) / <code>github</code> / <code>forgejo</code></td>
+<td>Which CI definitions to ship.</td>
+</tr>
+<tr>
+<td><code>enable_renovate</code></td>
+<td><code>true</code> / <code>false</code>, default <code>true</code> (GitHub only)</td>
+<td>Add the nightly <code>renovate.yml</code> workflow and <code>renovate.json</code>. Renovate runs as a GitHub App so CI runs on its PRs.</td>
+</tr>
+<tr>
+<td><code>renovate_preset</code></td>
+<td>free text, default <code>github&gt;{github_username}/renovate-config</code></td>
+<td>Preset <code>renovate.json</code> extends. Use <code>config:recommended</code> when the account or org has no shared preset repo.</td>
+</tr>
+<tr>
+<td><code>ci_app_client_id_secret</code> / <code>ci_app_private_key_secret</code></td>
+<td>secret names, default <code>CI_APP_CLIENT_ID</code> / <code>CI_APP_PRIVATE_KEY</code></td>
+<td>Actions secrets holding the Renovate App's Client ID and private key (asked when Renovate is on).</td>
+</tr>
 </tbody>
 </table>
 <h2 id="apply-template-updates-to-an-existing-project">Apply template updates to an existing project<a class="headerlink" href="#apply-template-updates-to-an-existing-project" title="Permanent link">&para;</a></h2>
@@ -875,20 +895,22 @@
 </span><span id="__span-3-19"><a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>│   ├── ci.yml           # lint+typecheck on push; tests on PR
 </span><span id="__span-3-20"><a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>│   ├── release.yml      # on v* tag: build image, push GHCR, GitHub release
 </span><span id="__span-3-21"><a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a>│   ├── docs.yml         # deploy VitePress to GitHub Pages
-</span><span id="__span-3-22"><a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a>│   └── pr-review.yml    # optional LLM review (commented out)
-</span><span id="__span-3-23"><a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a>├── index.html           # Vite app entry
-</span><span id="__span-3-24"><a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a>├── Dockerfile
-</span><span id="__span-3-25"><a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a>├── docker-compose.yml
-</span><span id="__span-3-26"><a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a>├── .dockerignore
-</span><span id="__span-3-27"><a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a>├── .env.example
-</span><span id="__span-3-28"><a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a>├── package.json
-</span><span id="__span-3-29"><a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a>├── vite.config.ts
-</span><span id="__span-3-30"><a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a>├── vitest.config.ts
-</span><span id="__span-3-31"><a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a>├── tsconfig.json
-</span><span id="__span-3-32"><a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a>├── eslint.config.js
-</span><span id="__span-3-33"><a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a>├── .prettierrc.json
-</span><span id="__span-3-34"><a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a>├── commitlint.config.js
-</span><span id="__span-3-35"><a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a>└── .release-it.json
+</span><span id="__span-3-22"><a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a>│   ├── pr-review.yml    # optional LLM review (commented out)
+</span><span id="__span-3-23"><a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a>│   └── renovate.yml     # nightly Renovate as a GitHub App (if enable_renovate)
+</span><span id="__span-3-24"><a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a>├── renovate.json        # extends renovate_preset (if enable_renovate)
+</span><span id="__span-3-25"><a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a>├── index.html           # Vite app entry
+</span><span id="__span-3-26"><a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a>├── Dockerfile
+</span><span id="__span-3-27"><a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a>├── docker-compose.yml
+</span><span id="__span-3-28"><a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a>├── .dockerignore
+</span><span id="__span-3-29"><a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a>├── .env.example
+</span><span id="__span-3-30"><a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a>├── package.json
+</span><span id="__span-3-31"><a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a>├── vite.config.ts
+</span><span id="__span-3-32"><a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a>├── vitest.config.ts
+</span><span id="__span-3-33"><a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a>├── tsconfig.json
+</span><span id="__span-3-34"><a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a>├── eslint.config.js
+</span><span id="__span-3-35"><a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a>├── .prettierrc.json
+</span><span id="__span-3-36"><a id="__codelineno-3-36" name="__codelineno-3-36" href="#__codelineno-3-36"></a>├── commitlint.config.js
+</span><span id="__span-3-37"><a id="__codelineno-3-37" name="__codelineno-3-37" href="#__codelineno-3-37"></a>└── .release-it.json
 </span></code></pre></div>
 
 
@@ -950,7 +972,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["navigation.sections", "navigation.path", "navigation.top", "navigation.indexes", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate", "content.tabs.link", "content.tooltips"], "search": "assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="assets/javascripts/bundle.c21346df.min.js"></script>
+      <script src="assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
     
   </body>
