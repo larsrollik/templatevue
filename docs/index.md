@@ -57,6 +57,10 @@ pnpm dev        # http://localhost:5173
 | `enable_docker_publishing` | `false` / `true`, default `false` | Build + push the container image to GHCR in `release.yml`. Off still cuts the GitHub release. |
 | `enable_docs_publishing` | `false` / `true`, default `false` | Add the `docs.yml` GitHub Pages deploy workflow. |
 | `enable_llm_pr_review` | `false` / `true`, default `false` | Add the optional `pr-review.yml` LLM-review workflow. |
+| `ci_platform` | `both` (default) / `github` / `forgejo` | Which CI definitions to ship. |
+| `enable_renovate` | `true` / `false`, default `true` (GitHub only) | Add the nightly `renovate.yml` workflow and `renovate.json`. Renovate runs as a GitHub App so CI runs on its PRs. |
+| `renovate_preset` | free text, default `github>{github_username}/renovate-config` | Preset `renovate.json` extends. Use `config:recommended` when the account or org has no shared preset repo. |
+| `ci_app_client_id_secret` / `ci_app_private_key_secret` | secret names, default `CI_APP_CLIENT_ID` / `CI_APP_PRIVATE_KEY` | Actions secrets holding the Renovate App's Client ID and private key (asked when Renovate is on). |
 
 ## Apply template updates to an existing project
 
@@ -105,7 +109,9 @@ my-project/
 │   ├── ci.yml           # lint+typecheck on push; tests on PR
 │   ├── release.yml      # on v* tag: build image, push GHCR, GitHub release
 │   ├── docs.yml         # deploy VitePress to GitHub Pages
-│   └── pr-review.yml    # optional LLM review (commented out)
+│   ├── pr-review.yml    # optional LLM review (commented out)
+│   └── renovate.yml     # nightly Renovate as a GitHub App (if enable_renovate)
+├── renovate.json        # extends renovate_preset (if enable_renovate)
 ├── index.html           # Vite app entry
 ├── Dockerfile
 ├── docker-compose.yml
